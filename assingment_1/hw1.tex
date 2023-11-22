@@ -9,7 +9,7 @@
 \makemytitle{Homework Assignment 1}
 
 
-\submitter{TODO: replace this with your name (and Matr. ID)}
+\submitter{Irem Begum Gunduz 7026821)}
 \due{2:00pm Thursday, 23 November 2023 on CISPA CMS}
 
 \directions{
@@ -20,11 +20,6 @@ The purpose of this assignment is to get you familiar with the definition of adv
 
 
 \collaborators{TODO: replace this with your collaborators (if you did not have any, replace this with {\em None})}
-
-\directions{
-This problem set includes both PDF and Jupyter notebook components. You should complete the answers to the PDF part by writing your answers in \texttt{hw1.tex}, and submitting your generated PDF file in CISPA CMS under Submission tab. The first thing you should do in \keyword{hw1.tex} is setting up your name as the author of the submission by replacing the line, \texttt{\textbackslash submitter\{TODO: your name\}}, with your name and your Matr. ID, e.g., \texttt{\textbackslash submitter\{Susan Blake (7583916)\}}. Before submitting your PDF, also remember to (1) list your collaborators by replacing the TODO in {\texttt{\textbackslash collaborators\{TODO: replace ...\}}}, and (2) replace the second line in \keyword{hw1.tex}, \texttt{\textbackslash usepackage\{macro\}} with \texttt{\textbackslash usepackage[response]\{macro\}} so the directions do not appear in your final PDF.
-}
-
 
 \begin{problem}[10 pts]
 \label{problem:1}
@@ -40,6 +35,27 @@ where $\bx\in\RR^d$, $y\in\{-1, +1\}$, and $\sigma(z) = 1/\big(1+\exp(-z)\big)$.
 \textbf{Note:} This implies that for linear models, robust learning against $\ell_\infty$ perturbations is essentially looking for a weight parameter with small $\ell_1$-norm and maximized margin.
 }
 
+$$
+x^{\prime} \in B_e\left(x, l_{\infty}\right),\left\|x^{\prime}-x\right\|_{\infty} \leq \epsilon 
+$$
+$$
+x_i-x_i \leqslant \epsilon \quad, i \in \mathbb{R}^d
+$$
+$$
+\sum_{i=1}^d w_i x_i^i-w_i x_i \leqslant \epsilon \sum_{i=1}^d w_1^d
+$$
+$$
+\sum_{i=1}^d w_i x_i \leqslant \sum_{i=1}^d w_i x_i+\epsilon \underbrace{\sum_{i=1}^d \omega_i}_{l_1-\text { norm } }
+$$
+$$
+\sum_{i=1}^d w_i x_i \leqslant \sum_{i=1}^d w_i x_i+\epsilon \sum_{i=1}^d\|w\|_1
+$$
+
+Goal is max $l\left(w ; x^{\prime}, y\right)$ and
+$\min y\left\langle\omega, x^{\prime}\right\rangle, \quad x^{\prime} \in \beta_t(x, l \infty)$ It's possible if max reduction is \epsilon $\|w\|_1$.
+$$
+y\left\langle\omega, x^{\prime}\right\rangle=y\langle w, x\rangle-\epsilon \|w \|_1
+$$
 
 
 \directions{\clearpage}
@@ -55,7 +71,20 @@ Suppose we want to solve the maximization problem of logistic regression specifi
 \directions{
 \textbf{Note:} Based on the computed gradient, the PGD attack can be understood as simply performing $\bx_{t+1} = \bx_t - \alpha\cdot\frac{\partial}{\partial{\bx}} \ell(\bw; \bx, y)\Big|_{\bx=\bx_{t}}$, where $\bx_0 = \bx$, and projecting $\bx_{t+1}$ onto the nearest point within the perturbation ball $\cB_\eps(\bx, \ell_\infty)$ in the form of $\ell_\infty$-norm distance iteratively if $\|\bx_{t+1}-\bx\|_\infty > \epsilon$.
 }
-
+$$
+\begin{aligned}
+& \ell(\omega ; x, y)=-\log \sigma(y \cdot\langle\omega \mid x\rangle) \\
+& \text { say } z=y .\langle w \mid x\rangle \quad \sigma(z)=\frac{1}{1+e^{-z}} \\
+& \rightarrow \ell(w ; x, y)=-\log \epsilon(z) \\
+& \frac{d c(x)}{d z}=\sigma(z) \cdot(1-\sigma(z)) \\
+& \frac{d(l(w, x, y))}{d x}=\frac{d(l(w ; x, y))}{d z} \cdot \frac{d z}{d x} \\
+& \sigma=-\frac{d \log \sigma(z)}{d z}=-\frac{1}{\sigma(z)} \cdot \frac{d \sigma(z)}{d z} \\
+& =-\frac{1}{\sigma(z)} \cdot \sigma(z) \cdot(1-\sigma(z)) \\
+& \frac{d z}{d x}=\frac{d(y\langle\omega, x\rangle)}{d x}=\sigma(z)-1 \\
+& \frac{d(l(\omega ; x, y))}{d x}=(\sigma(y\langle\omega, x\rangle)-1) \cdot(y, \omega) \\
+&
+\end{aligned}
+$$
 \directions{\clearpage}
 
 \shortsection{Implementation Problems} Below are two problems that you need to complete the provided Jupyter notebook. The goal is to help you understand the iterative PGD attack (both untargeted and targeted versions). For illustration, we will use a pretrained ImageNet ResNet50 model as the victim, and use a ladybug image from ImageNet as the seed example. Note that the class index of ladybug is 301.
@@ -80,6 +109,21 @@ where $(\bx,y)$ is the input example (in this task, a ladybug image), $h_\theta:
 \directions{
 \textbf{Note:} After you implement the attack, you may want to check what the predicted label of the generated adversarial examples $\bx'$ is, and think about whether it makes sense.
 }
+
+\textbf{Untargeted PGD Attack}
+\begin{enumerate}
+    \item Initialize adversarial\_image as a copy of the original image.
+    \item For iteration in range(num\_iterations):
+    \begin{enumerate}
+        \item Calculate gradient of loss function respect to adversarial\_image using the model.
+        \item Compute perturbation as alpha times the sign of the gradient.
+        \item Update adversarial\_image by adding perturbation and clipping it within image +/- epsilon.
+        \item Evaluate adversarial\_image on the model to get yhe prediction.
+        \item If prediction differs from original\_prediction, break.
+    \end{enumerate}
+    \item Return adversarial\_image.
+\end{enumerate}
+
 
 
 

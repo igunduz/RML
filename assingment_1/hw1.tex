@@ -1,0 +1,133 @@
+\documentclass[11pt]{article}
+\usepackage{macro} % replace this line with the one below for your submission
+% \usepackage[response]{macro}
+
+\begin{document}
+
+\makeheader
+
+\makemytitle{Homework Assignment 1}
+
+
+\submitter{TODO: replace this with your name (and Matr. ID)}
+\due{2:00pm Thursday, 23 November 2023 on CISPA CMS}
+
+\directions{
+The purpose of this assignment is to get you familiar with the definition of adversarial examples and the typical targeted and untargeted methods for generating adversarial examples introduced in Lecture 3. 
+}
+
+\collaboration{You should do this assignment by yourself and submit your own answers. You may discuss the problems with anyone you want and it is also fine to get help from anyone on problems with LaTeX or Jupyter/Python. You should note in the {\em Collaborators} box below the people you collaborated with.}
+
+
+\collaborators{TODO: replace this with your collaborators (if you did not have any, replace this with {\em None})}
+
+\directions{
+This problem set includes both PDF and Jupyter notebook components. You should complete the answers to the PDF part by writing your answers in \texttt{hw1.tex}, and submitting your generated PDF file in CISPA CMS under Submission tab. The first thing you should do in \keyword{hw1.tex} is setting up your name as the author of the submission by replacing the line, \texttt{\textbackslash submitter\{TODO: your name\}}, with your name and your Matr. ID, e.g., \texttt{\textbackslash submitter\{Susan Blake (7583916)\}}. Before submitting your PDF, also remember to (1) list your collaborators by replacing the TODO in {\texttt{\textbackslash collaborators\{TODO: replace ...\}}}, and (2) replace the second line in \keyword{hw1.tex}, \texttt{\textbackslash usepackage\{macro\}} with \texttt{\textbackslash usepackage[response]\{macro\}} so the directions do not appear in your final PDF.
+}
+
+
+\begin{problem}[10 pts]
+\label{problem:1}
+\rm
+Consider a binary logistic regression model with loss $\ell(\bw; \bx, y) = - \log \sigma\big(y\cdot \langle \bw, \bx \rangle\big)$, 
+where $\bx\in\RR^d$, $y\in\{-1, +1\}$, and $\sigma(z) = 1/\big(1+\exp(-z)\big)$. Let $\cB_\eps(\bx, \ell_\infty) = \{\bx'\in\RR^d: \|\bx' - \bx\|_\infty \leq \epsilon\}$ limit the searching region of feasible $\bx'$. Show that
+\begin{align*}
+    \max_{\bx'\in\cB_\epsilon(\bx, \ell_\infty)} \ell(\bw; \bx', y) = -\log \sigma\big(y\cdot \langle \bw, \bx \rangle - \eps\|\bw\|_1\big).
+\end{align*}
+\end{problem}
+
+\directions{
+\textbf{Note:} This implies that for linear models, robust learning against $\ell_\infty$ perturbations is essentially looking for a weight parameter with small $\ell_1$-norm and maximized margin.
+}
+
+
+
+\directions{\clearpage}
+
+
+
+\begin{problem}[10 pts]
+\label{problem:2}
+\rm
+Suppose we want to solve the maximization problem of logistic regression specified in Problem \ref{problem:1} using gradient descent. Compute the gradient of $\ell(\bw; \bx, y)$ with respect to $\bx$.
+\end{problem}
+
+\directions{
+\textbf{Note:} Based on the computed gradient, the PGD attack can be understood as simply performing $\bx_{t+1} = \bx_t - \alpha\cdot\frac{\partial}{\partial{\bx}} \ell(\bw; \bx, y)\Big|_{\bx=\bx_{t}}$, where $\bx_0 = \bx$, and projecting $\bx_{t+1}$ onto the nearest point within the perturbation ball $\cB_\eps(\bx, \ell_\infty)$ in the form of $\ell_\infty$-norm distance iteratively if $\|\bx_{t+1}-\bx\|_\infty > \epsilon$.
+}
+
+\directions{\clearpage}
+
+\shortsection{Implementation Problems} Below are two problems that you need to complete the provided Jupyter notebook. The goal is to help you understand the iterative PGD attack (both untargeted and targeted versions). For illustration, we will use a pretrained ImageNet ResNet50 model as the victim, and use a ladybug image from ImageNet as the seed example. Note that the class index of ladybug is 301.
+
+\directions{
+If you haven't used Jupyter notebook before, you can start by installing Jupyter on your computer using this link: \url{https://jupyter.org/install}. To run the provided \texttt{hw1.ipynb} file, note that you also need to install the required packages properly. The \texttt{imagenet_class_index.json} file provides the $1000$ ImageNet labels with corresponding class names and class indices.
+}
+
+
+\begin{problem}[10 pts]
+\label{problem:3}
+\rm
+Let $K$ be the number of class labels. Consider $\ell_\infty$ perturbations with $\epsilon=2/255$. The goal of PGD attack is to solve the following objective using an iterative algorithm:
+\begin{align*}
+    \max_{\bx'}\:\ell\big(h_\theta(\bx', y)\big) \:\: \text{subject to} \:\: \|\bx' - \bx\|_\infty \leq \eps,
+\end{align*}
+where $(\bx,y)$ is the input example (in this task, a ladybug image), $h_\theta:\RR^d\rightarrow\RR^K$ is neural network mapping from input to logit layer (in this task, the pretrained ResNet50 model), and $\ell$ is the cross-entropy loss.
+
+\textbf{Your Task:} Write down the algorithm pseudocode of untargeted PGD attack, then implement the iterative attack by completing the corresponding section of the provided Jupyter notebook. Specifically, you need to initialize the PGD attack in the implementation with zero initialization, and run PGD attack using a SGD optimizer with a learning rate $0.1$ for $30$ iterations. In this case, you are using the raw gradient without the sign function, as described in the Note of Problem~\ref{problem:2}. Remember that you also need to ensure the output of your algorithm lies within $\cB_\eps(\bx, \ell_\infty)$.
+\end{problem}
+
+\directions{
+\textbf{Note:} After you implement the attack, you may want to check what the predicted label of the generated adversarial examples $\bx'$ is, and think about whether it makes sense.
+}
+
+
+
+\directions{\clearpage}
+
+
+\begin{problem}[10 pts]
+\label{problem:4}
+\rm
+Note that the previous implementation of PGD attack is untargeted, which does not specify a targeted label to guide the adversarial examples generation process. Under the same setting of Problem \ref{problem:3}, the targeted version of PGD attack is designed to solve the following objective:
+\begin{align*}
+    \max_{\bx'}\: \bigg(\ell\big(h_\theta(\bx', y)\big) -\ell\big(h_\theta(\bx', y_{\mathrm{targ}})\big)\bigg) \:\: \text{subject to} \:\: \|\bx' - \bx\|_\infty \leq \eps,
+\end{align*}
+where $y_{\mathrm{targ}}$ is a pre-selected targeted label that is different from $y$. 
+
+\textbf{Your Task:} Write down the algorithm pseudocode of targeted PGD attack, then implement the attack by completing the corresponding section of the provided Jupyter notebook. Specifically, the target label should be set as zebra (the corresponding class index is 340 in ImageNet). You need to initialize the PGD attack in the implementation with zero initialization, and run PGD attack using a SGD optimizer with a learning rate $0.005$ for $100$ iterations.
+\end{problem}
+
+\directions{
+\textbf{Note:} After you implement the attack, you can also replace the targeted label with other class index (i.e., any number from $1$ to $1000$ other than 301 and 340), and see if your attack can also succeed in generating a corresponding targeted adversarial example. Will there be a difference in the generation process of adversarial examples for different classes?
+}
+
+
+\directions{\clearpage}
+
+
+\begin{problem}[bonus, 5 pts]
+\label{problem:bonus}
+\rm
+Consider a linear model with soft-SVM loss $\ell(\bw; \bx, y) = \max(0, 1 -y\cdot \langle \bw, \bx \rangle)$, where $\bx\in\RR^d$ and $y\in\{-1, +1\}$. For any $p\geq 1$, show that
+\begin{align*}
+    \max_{\bx'\in\cB_\epsilon(\bx, \ell_p)} \ell(\bw; \bx', y) = \max(0, 1 -y\cdot \langle \bw, \bx \rangle + \eps \|\bw\|_q),
+\end{align*}
+where $\cB_\epsilon(\bx, \ell_p) = \{\bx'\in\RR^d: \|\bx' - \bx\|_p \leq \epsilon\}$ is the $\eps$-ball at $\bx$ in $\ell_p$-norm, and $q$ satisfies $1/p + 1/q = 1$.
+\end{problem}
+
+
+\directions{
+\textbf{Note:} This result generalizes what we have shown in Problem \ref{problem:1}, which implies that for linear models, robust learning against general some specific $\ell_p$ perturbations $(p\geq 1)$ is essentially looking for a weight parameter with small $\ell_q$-norm that maximizes the margin.
+}
+
+
+\vspace{20pt}
+
+
+\begin{center}
+{\bf End of Homework Assignment 1 (PDF part)} \\
+Don't forget to also complete and submit the Jupyter notebook!
+\end{center}
+
+\end{document}
